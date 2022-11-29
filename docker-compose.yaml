@@ -1,0 +1,30 @@
+version: "3"
+services:
+
+  postgres:
+    image: postgres:15-alpine
+    restart: always
+    container_name: deliveroo-postgres
+    env_file:
+      - ./envirironment/database.env
+    volumes:
+        - ./model/data:/var/lib/postgresql/data
+        - ./model/DeliverooTable.sql:/docker-entrypoint-initdb.d/DeliverooTable.sql
+    ports:
+      - "5432:5432"
+
+  deliveroo-server:
+        build: 
+          context: .
+          dockerfile: Dockerfile
+        image: deliveroo-server
+        container_name: deliveroo-server
+        restart: always
+        ports: 
+          - "3000:3000"
+        env_file:
+          - ./envirironment/database.env
+        depends_on: 
+          - postgres
+        entrypoint: ["/app/wait-for.sh", "postgres:5432", "--", "/app/start.sh"]
+        command: ["/app/deliveroo"]
